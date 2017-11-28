@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>Hive Link Plot</title>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
+	<style type="text/css">
+	.link{
+		fill: none;
+    stroke: #000;
+		stroke-width: 1px;
+    stroke-opacity: .1;
+	}
+	.axis {
+		stroke: #000;
+		stroke-width: 1.5px;
+	}
+.link.active {
+  stroke-width: 3px;
+  stroke-opacity: 1;
+}
+.node {
+  stroke: #000;
+}
+.node.active {
+  stroke: red;
+  stroke-width: 3px;
+  stroke-opacity: 1;
+}
+.container1{
+  padding-top: 10px;
+  position: relative;
+  left: 0%;
+  top: 20%;
+}
+.container2{
+  position: absolute;
+  left: 0%;
+  top: 27%
+}
+.container3{
+  z-index: 2000000;
+  position: absolute;
+  left: 85%;
+  top: 20%;
+  font: 15px;
+}
+.source{
+  padding-bottom: 5px;
+}
+.container3 .parentP{
+  color: red;
+}
+.container3 .childP{
+  color: steelblue;
+  line-height: 70%;
+}
+.header{
+  width: 1400px;
+  height: 100px;
+  margin-left: auto;
+  margin-right: auto;
+  background-color: #5d6d7e;
+  color: white;
+  font: 30px palatino;
+}
+.head-txt{
+  position: absolute;
+  left: 20%;
+  top: 5%;
+}
+.plain-text{
+  padding-top: 6px;
+}
+
+	</style>
+   <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.2/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js" integrity="sha384-0mSbJDEHialfmuBBQP6A4Qrprq5OVfW37PRR3j5ELqxss1yVqOtnepnHVP9aJ7xS" crossorigin="anonymous"></script>
+</head>
+<body>
+  <header class="header">
+    <p class="head-txt">International Travel Visa Topology — Hive Plot Visualization</p>
+  </header>
+   <div class="container1 container">
+    <div class="source row">
+      <div class="col-md-2 plain-text">Source Continent:</div>
+      <div class="col-md-3">
+        <button class="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown" id="source">Europe<span class="caret"></span></button>
+        <ul class="dropdown-menu" id="source">
+          <li><a href="#">Asia</a></li>
+          <li><a href="#">Africa</a></li>
+          <li><a href="#">Europe</a></li>
+          <li><a href="#">North America</a></li>
+          <li><a href="#">South America</a></li>
+          <li><a href="#">Central America and the Antilles</a></li>
+          <li><a href="#">Oceania</a></li>
+        </ul>
+      </div>
+
+      <div class="col-md-2 plain-text">Target Continent:</div>
+      <div class="col-md-3">
+        <button class="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown" id="target">North America<span class="caret"></span></button>
+        <ul class="dropdown-menu" id="target">
+          <li><a href="#">Asia</a></li>
+          <li><a href="#">Africa</a></li>
+          <li><a href="#">Europe</a></li>
+          <li><a href="#">North America</a></li>
+          <li><a href="#">South America</a></li>
+          <li><a href="#">Central America and the Antilles</a></li>
+          <li><a href="#">Oceania</a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+<div class="container3">
+</div>
+
+<script src="http://d3js.org/d3.v3.min.js"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/d3-legend/1.10.0/d3-legend.js"></script>
+<script type="text/javascript" src="./static/d3.hive.min.js"></script>
+<script type="text/javascript">
+
+var source_cont = "Europe";
+var target_cont = "North America";
+
+$("#source li a").click(function(){
+  var sidePane = d3.select(".container3")
+  sidePane.html("")
+  sidePane.selectAll("p")
+    .remove()
+  source_cont = $(this).text();
+  $("#source:first-child").text(source_cont);
+  plot(source_cont, target_cont);
+});
+
+
+$("#target li a").click(function(){
+  var sidePane = d3.select(".container3")
+  sidePane.html("")
+  sidePane.selectAll("p")
+    .remove()
+
+  target_cont = $(this).text();
+  $("#target:first-child").text(target_cont);
+  plot(source_cont, target_cont);
+});
+
+plot(source_cont, target_cont);
+
+function plot(source_cont, target_cont){
+  d3.select("svg")
+    .remove();
+var width = 1200;
+var height = 1200;
+var outerRadius = 500;
+var innerRadius = 50;
+var minLength = 5;
+
+if ((source_cont == 'Asia') && (target_cont == 'Asia')){
+  innerRadius = 160;
+} else if (target_cont == 'Africa'){
+  innerRadius = 70;
+}
+
+var visa_types = {'free': 1, 'required': 4, 'refused': 2, 'onarrival': 3, 'origin': 0};
+var angle = d3.scale.ordinal()
+    .domain(["origin", "free", "refused", "onarrival", "required"])
+    .range([0, Math.PI/2, 11 * Math.PI / 12, 13 * Math.PI / 12, 3 * Math.PI / 2]);
+var radius = d3.scale.linear()
+		.range([innerRadius, outerRadius]);
+var color = d3.scale.ordinal()
+    .domain(["origin", "free", "refused", "onarrival", "required"])
+    .range(["yellow", "blue", "red", "orange", "green"]);
+var svg = d3.select("body").append("svg")
+    .attr("class", "svg")
+		.attr("width", width)
+		.attr("height", height)
+	.append("g")
+		.attr("transform", "translate(" + width/2.35 + "," + height/2.3 + ")");
+
+svg.append("g")
+    .attr("class", "legendOrdinal")
+    .attr("transform", "translate(-410, -500)");
+var legendOrdinal = d3.legend.color()
+    .scale(color);
+
+d3.json("reduced_pairwise_datasets.json", function(error, graph){
+  nodes = graph.pairwise_nodes[source_cont + "-" + target_cont];
+  links = graph.pairwise_links[source_cont + "-" + target_cont];
+  var free_links = new Set(links.filter(function(p){ return p.target.type == 'free';}).map(function(d){return d.target.name}));
+  var onarrival_links = new Set(links.filter(function(p){ return p.target.type == 'onarrival';}).map(function(d){return d.target.name}));
+  var required_links = new Set(links.filter(function(p){ return p.target.type == 'required';}).map(function(d){return d.target.name}));
+  var refused_links = new Set(links.filter(function(p){ return p.target.type == 'refused';}).map(function(d){return d.target.name}));
+
+  var visa_lengths = [{'name': 'origin', 'length': 55}, {'name': 'free', 'length': free_links.size}, {'name': 'refused', 'length': refused_links.size}, {'name': 'onarrival', 'length': onarrival_links.size}, {'name': 'required', 'length': required_links.size}];
+
+  var visa_obj = {'origin': 55, 'free': free_links.size, 'required': required_links.size, 'onarrival': onarrival_links.size, 'refused': refused_links.size}; 
+
+  radius.domain(d3.extent(visa_lengths, function(d){ return d.length; }));
+
+  svg.selectAll(".axis")
+      .data(visa_lengths)
+    .enter().append("line")
+      .attr("class", "axis")
+      .attr("transform", function(d, i){ return "rotate(" + degrees(angle(i)) + ")";})
+      .attr("x1", radius.range()[0])
+      .attr("x2", function(d){return radius(d.length);})
+      ;
+  svg.selectAll(".link")
+      .data(links)
+    .enter().append("path")
+      .attr("class", "link")
+      .attr("d", d3.hive.link()
+      .angle(function(d) { return angle(visa_types[d.type]); })
+      .radius(function(d) { return radius(visa_obj[d.type] * d.y); }))
+      .style("stroke", function(d) { return color(d.target.type);})
+      .on("mouseover", linkMouseover)
+      .on("mouseout", mouseout)
+      .append("title")
+      .text(function(d){ return d.source.name + ' --> ' + d.target.name 
+      })
+      ;
+  svg.selectAll(".node")
+      .data(nodes)
+    .enter().append("circle")
+      .attr("class", "node")
+      .attr("transform", function(d) { return "rotate(" + degrees(angle(visa_types[d.type])) + ")"; })
+      .attr("cx", function(d) { return radius(visa_obj[d.type] * d.y); })
+      .attr("r", 5)
+      .style("fill", function(d) { return color(d.type);})
+      .on("click", nodeClick)
+      .on("mouseover", nodeMouseover)
+      .on("mouseout", mouseout)
+      .append("title")
+      .text(function(d){ return d.name; })
+      ;
+  var legendOrdinal = d3.legend.color()
+    .scale(color);
+  svg.select(".legendOrdinal")
+    .call(legendOrdinal);
+
+  function linkMouseover(d) {
+    svg.selectAll(".link").classed("active", function(p) { return p === d; });
+    svg.selectAll(".node").classed("active", function(x) { return x.name === d.source.name || x.name === d.target.name; });
+  }
+
+  function nodeMouseover(d) {
+    svg.selectAll(".link").classed("active", function(p) { return (p.source.name === d.name && p.source.type == d.type) || (p.target.name === d.name && p.target.type == d.type); });
+    d3.select(this).classed("active", true);
+  }
+
+  function nodeClick(d){
+    var relavant_nodes = {'free': [], 'onarrival':[], 'required': [], 'refused':[]};
+    links.forEach(function(p){
+      if (p.source.name == d.name){
+        relavant_nodes[p.target.type].push(p.target.name)
+      }
+    })
+    var side_panel = d3.select('.container3');
+    side_panel.html("");
+    side_panel.html('<strong>Country: </strong>' + d.name + '<br></br>');
+    for (key in relavant_nodes){
+      if (relavant_nodes[key].length != 0){
+      var key_item = side_panel.append("p")
+        .attr("class", "parentP")
+        .html('<strong>Visa ' + key.toUpperCase() + ":" + '</strong>');
+      relavant_nodes[key].forEach(function(d){
+        side_panel.append("p")
+          .attr("class", "childP")
+          .html(d);
+      })
+    }
+    }
+  }
+
+  function mouseout() {
+    svg.selectAll(".active").classed("active", false);
+  }
+
+  });
+}
+
+function degrees(radians) {
+  return radians / Math.PI * 180 - 90;
+}
+
+</script>
+
+</body>
+</html>
